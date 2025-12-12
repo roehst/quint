@@ -298,7 +298,12 @@ export function walkDeclaration(visitor: IRVisitor, decl: ir.QuintDeclaration): 
       if (visitor.enterInstance) {
         visitor.enterInstance(decl)
       }
-      decl.overrides.forEach(([_, e]) => walkExpression(visitor, e))
+      // Guard against undefined expressions in overrides (can happen with parse errors)
+      decl.overrides.forEach(([_, e]) => {
+        if (e) {
+          walkExpression(visitor, e)
+        }
+      })
       if (visitor.exitInstance) {
         visitor.exitInstance(decl)
       }
@@ -372,7 +377,10 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       if (visitor.enterOpDef) {
         visitor.enterOpDef(def)
       }
-      walkExpression(visitor, def.expr)
+      // Guard against undefined expr (can happen with parse errors)
+      if (def.expr) {
+        walkExpression(visitor, def.expr)
+      }
 
       if (visitor.exitOpDef) {
         visitor.exitOpDef(def)
@@ -390,7 +398,10 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       if (visitor.enterAssume) {
         visitor.enterAssume(def)
       }
-      walkExpression(visitor, def.assumption)
+      // Guard against undefined assumption (can happen with parse errors)
+      if (def.assumption) {
+        walkExpression(visitor, def.assumption)
+      }
 
       if (visitor.exitAssume) {
         visitor.exitAssume(def)

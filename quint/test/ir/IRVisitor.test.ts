@@ -899,4 +899,99 @@ describe('walkModule', () => {
       assert.deepEqual(actualTypes, expectedTypes)
     })
   })
+
+  describe('handles malformed IR gracefully', () => {
+    it('handles OpDef with undefined expr', () => {
+      // This tests the defensive guard added to handle parse errors
+      class TestVisitor implements IRVisitor {
+        exprCount = 0
+
+        enterExpr(_expr: QuintEx): void {
+          this.exprCount++
+        }
+      }
+
+      // Create a malformed OpDef with undefined expr (can happen with parse errors)
+      const malformedDef: any = {
+        id: 1n,
+        kind: 'def',
+        name: 'badDef',
+        qualifier: 'val',
+        expr: undefined, // This is the problematic case
+      }
+
+      const module: QuintModule = {
+        id: 0n,
+        name: 'test',
+        declarations: [malformedDef],
+      }
+
+      const visitor = new TestVisitor()
+      // This should not throw an error
+      walkModule(visitor, module)
+      // The undefined expr should not be visited
+      assert.equal(visitor.exprCount, 0)
+    })
+
+    it('handles Assume with undefined assumption', () => {
+      class TestVisitor implements IRVisitor {
+        exprCount = 0
+
+        enterExpr(_expr: QuintEx): void {
+          this.exprCount++
+        }
+      }
+
+      // Create a malformed Assume with undefined assumption
+      const malformedAssume: any = {
+        id: 1n,
+        kind: 'assume',
+        name: 'badAssume',
+        assumption: undefined, // This is the problematic case
+      }
+
+      const module: QuintModule = {
+        id: 0n,
+        name: 'test',
+        declarations: [malformedAssume],
+      }
+
+      const visitor = new TestVisitor()
+      // This should not throw an error
+      walkModule(visitor, module)
+      // The undefined assumption should not be visited
+      assert.equal(visitor.exprCount, 0)
+    })
+
+    it('handles Instance with undefined expressions in overrides', () => {
+      class TestVisitor implements IRVisitor {
+        exprCount = 0
+
+        enterExpr(_expr: QuintEx): void {
+          this.exprCount++
+        }
+      }
+
+      // Create a malformed Instance with undefined override expression
+      const malformedInstance: any = {
+        id: 1n,
+        kind: 'instance',
+        protoName: 'Proto',
+        overrides: [[{ id: 2n, name: 'x' }, undefined]], // Undefined expression
+        identityOverride: false,
+      }
+
+      const module: QuintModule = {
+        id: 0n,
+        name: 'test',
+        declarations: [malformedInstance],
+      }
+
+      const visitor = new TestVisitor()
+      // This should not throw an error
+      walkModule(visitor, module)
+      // The undefined expression should not be visited
+      assert.equal(visitor.exprCount, 0)
+    })
+  })
 })
